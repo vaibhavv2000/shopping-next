@@ -47,10 +47,7 @@ const Intro = () => {
    <Left>
 	<Slider y={-currentSlide * 33.33}>
 	{imageList().map((item, index) => (
-	 <Image
-	  src={item} alt={``} 
-	  key={String(`Img${index}`)}
-	 />
+	 <Image src={item} alt={'Shopping-Image'} key={String(`Img-${index}`)} />
 	))}
 	</Slider>
    </Left>
