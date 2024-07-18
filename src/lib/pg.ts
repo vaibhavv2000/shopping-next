@@ -1,14 +1,17 @@
-import {Pool} from "pg";
+import {Client} from "pg";
 
-const pg = new Pool({
- host: "localhost",
- port: 5432,
- user: "postgres",
- password: "vaibhavk15",
- database: "shopping",
+const pg = new Client({
+ host: "pg-1a6da4a3-vaibhavk1965-e15c.i.aivencloud.com",
+ user: "avnadmin",
+ database: "defaultdb",
+ port: 10758,
+ password: "AVNS_Is_cElUofI7Gwo4eFEA",
+ ssl: {
+  rejectUnauthorized: false,
+ },
 });
 
-pg.on("connect", () => console.log("DB_CONNECTED"));
+pg.connect();
 
 pg.on("error",(err) => console.log(err));
 

@@ -67,46 +67,46 @@ const Navbar = () => {
 export default Navbar;
 
 const Nav = styled.nav<{isDarkMode: boolean}>`
-	background-color: ${({isDarkMode}) => (isDarkMode ? "#111" : "#fff")};
-	padding: 10px;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	box-shadow: 0px 4px 8px #e5e5e5;
+ background-color: ${({isDarkMode}) => (isDarkMode ? "#111" : "#fff")};
+ padding: 10px;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ box-shadow: 0px 4px 8px #e5e5e5;
 `;
 
 const Logo = styled.h1<{isDarkMode: boolean}>`
-	color: ${({isDarkMode}) => (!isDarkMode ? "#111" : "#fff")};
-	font-weight: 500;
-	font-size: 24px;
-	cursor: pointer;
+ color: ${({isDarkMode}) => !isDarkMode ? "#111" : "#fff"};
+ font-weight: 500;
+ font-size: 24px;
+ cursor: pointer;
 `;
 
 const Left = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 10px;
+ display: flex;
+ align-items: center;
+ gap: 10px;
 `;
 
 const Right = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 0 10px;
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ padding: 0 10px;
 
-	@media screen and (min-width: 670px) {
-	  gap: 20px;
-	  padding: 0 20px;
-	}
+ @media screen and (min-width: 670px) {
+  gap: 20px;
+  padding: 0 20px;
+ }
 `;
 
 const DarkMode = styled.div`
-	padding: 5px;
-	cursor: pointer;
-	height: 40px;
-	width: 40px;
-	display: grid;
-	place-items: center;
-	border-radius: 100%;
-	background-color: transparent;
+ padding: 5px;
+ cursor: pointer;
+ height: 40px;
+ width: 40px;
+ display: grid;
+ place-items: center;
+ border-radius: 100%;
+ background-color: transparent;
 `;

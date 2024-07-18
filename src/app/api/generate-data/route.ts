@@ -53,14 +53,14 @@ const userdata = `CREATE TABLE userdata (
 
 export async function GET() { 
  try {
-//   await pg.query("CREATE  DATABASE shopping");
-//   await pg.query(users);
-//   await pg.query(user_index);
-//   await pg.query(products);
-//   await pg.query(product_index);
-//   await pg.query(product_type);
-//   await pg.query(userdata);
-//   addProducts();
+  // await pg.query("CREATE DATABASE shopping");
+  // await pg.query(users);
+  // await pg.query(user_index);
+  // await pg.query(products);
+  // await pg.query(product_index);
+  // await pg.query(product_type);
+  // await pg.query(userdata);
+  // addProducts();
 
   return NextResponse.json("Data created",{status: 201});
  } catch (error) {

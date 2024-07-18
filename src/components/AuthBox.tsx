@@ -7,6 +7,7 @@ import {sm} from "@/lib/responsive";
 import {API} from "@/lib/API";
 import {HiXMark} from "react-icons/hi2";
 import {useAppDispatch, useAppSelector} from "@/lib/redux";
+import Loader from "./Loader";
 
 const AuthBox = (): JSX.Element => {
  const [aOpt, setAOpt] = useState<"left" | "right">("left");
@@ -21,6 +22,7 @@ const AuthBox = (): JSX.Element => {
  });
  const [loginError, setLoginError] = useState<string>("");
  const [registerError, setRegisterError] = useState<string>("");
+ const [loading, setLoading] = useState(false);
 
  const dispatch = useAppDispatch();
 
@@ -39,6 +41,10 @@ const AuthBox = (): JSX.Element => {
  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
   event.preventDefault();
 
+  if(loading) return;
+
+  setLoading(true);
+
   try {
    if (aOpt === "left") {
 	const {email, name, password} = register;
@@ -48,8 +54,10 @@ const AuthBox = (): JSX.Element => {
 	const res = await API.post(`/auth/register`, register);
 	localStorage.setItem("shopping-user", JSON.stringify(res.data.user));
 
+	setRegister({email: "", password: "", name: ""});
+
 	dispatch(login_user(res.data.user));
-	setTimeout(() => dispatch(toggleShowAuth(false)), 2000);
+	dispatch(toggleShowAuth(false));
    };
 
    if(aOpt === "right") {
@@ -60,12 +68,16 @@ const AuthBox = (): JSX.Element => {
 	const res = await API.post(`/auth/login`, login);
 	localStorage.setItem("shopping-user", JSON.stringify(res.data.user));
 
+	setLogin({email: "", password: ""});
+
 	dispatch(login_user(res.data.user));
-	setTimeout(() => dispatch(toggleShowAuth(false)), 2000);
+	dispatch(toggleShowAuth(false));
    };
   } catch (error: any) {
    if (aOpt === "left") setRegisterError(error.response.data.message);
    else setLoginError(error.response.data.message);
+  } finally {
+   setLoading(false);
   };
  };
 
@@ -77,10 +89,10 @@ const AuthBox = (): JSX.Element => {
 	<div style={{display: "flex", alignItems: "center"}}>
 	 <HeaderTitle cl={isDarkMode ? "#fff" : "#111"}>Auth</HeaderTitle>
 	  <HiXMark
-		size={28}
-		color={isDarkMode ? "#fff" : "#111"}
-		style={{cursor: "pointer"}}
-		onClick={() => dispatch(toggleShowAuth(false))}
+	   size={28}
+	   color={isDarkMode ? "#fff" : "#111"}
+	   style={{cursor: "pointer"}}
+	   onClick={() => dispatch(toggleShowAuth(false))}
 	  />
 	</div>
 	<AuthOptions dm={isDarkMode}>
@@ -100,20 +112,20 @@ const AuthBox = (): JSX.Element => {
 	 <AuthOpt opt={aOpt}>
 	  <Register onSubmit={handleSubmit}>
 	   <Input
-		 placeholder='Name'
-		 name='name'
-		 dm={isDarkMode}
-		 onChange={(e: ChangeEvent<HTMLInputElement>) =>
-		  setRegister((p) => ({...p, [e.target.name]: e.target.value}))
-		 }
+		placeholder='Name'
+		name='name'
+		dm={isDarkMode}
+		onChange={(e: ChangeEvent<HTMLInputElement>) =>
+		 setRegister((p) => ({...p, [e.target.name]: e.target.value}))
+		}
 	   />
 	   <Input
-		 dm={isDarkMode}
-		 placeholder='Email'
-		 name='email'
-		 onChange={(e: ChangeEvent<HTMLInputElement>) =>
-		   setRegister((p) => ({...p,[e.target.name]: e.target.value,}))
-		 }
+		dm={isDarkMode}
+		placeholder='Email'
+		name='email'
+		onChange={(e: ChangeEvent<HTMLInputElement>) =>
+		 setRegister((p) => ({...p,[e.target.name]: e.target.value,}))
+		}
 	   />
 	   <Input
 		placeholder='Password'
@@ -125,7 +137,10 @@ const AuthBox = (): JSX.Element => {
 		}
 	   />
 	   {registerError && <ErrorShow>{registerError}</ErrorShow>}
-	   <Button bg={isDarkMode}>Register</Button>
+	  <Button bg={isDarkMode}>
+	   Register
+	   {loading && <span className="scale-25"><Loader color="#fff" size={16} /></span>}
+	  </Button>
 	  </Register>
 	  <Login onSubmit={handleSubmit}>
 	   <Input
@@ -146,7 +161,10 @@ const AuthBox = (): JSX.Element => {
 		}
 	   />
 	   {loginError && <ErrorShow>{loginError}</ErrorShow>}
-	   <Button bg={isDarkMode}>Login</Button>
+	   <Button bg={isDarkMode}>
+		Login
+		{loading && <span className="scale-25"><Loader color="#fff" size={16} /></span>}
+	   </Button>
 	  </Login>
 	 </AuthOpt>
 	</div>
@@ -158,109 +176,112 @@ const AuthBox = (): JSX.Element => {
 export default AuthBox;
 
 const Main = styled.div`
-	height: 100vh;
-	width: 100vw;
-	top: 0;
-	left: 0;
-	position: fixed;
-	z-index: 1000000;
-	background-color: rgba(0, 0, 0, 0.333);
-	display: grid;
-	place-items: center;
+ height: 100vh;
+ width: 100vw;
+ top: 0;
+ left: 0;
+ position: fixed;
+ z-index: 1000000;
+ background-color: rgba(0, 0, 0, 0.333);
+ display: grid;
+ place-items: center;
 `;
 
 const Box = styled.div<{bg: string}>`
-	background-color: ${({bg}) => bg};
-	border-radius: 5px;
-	padding: 20px;
+ background-color: ${({bg}) => bg};
+ border-radius: 5px;
+ padding: 20px;
 `;
 
 const HeaderTitle = styled.h1<{cl: string}>`
-	font-size: 26px;
-	font-weight: 600;
-	color: ${({cl}) => cl};
-	text-align: center;
-	flex: 1;
+ font-size: 26px;
+ font-weight: 600;
+ color: ${({cl}) => cl};
+ text-align: center;
+ flex: 1;
 `;
 
 const AuthOptions = styled.div<{dm: boolean}>`
-	display: flex;
-	cursor: pointer;
-	padding: 8px 0;
-	margin: 5px 0;
-	position: relative;
-	box-shadow: 2px 2px 3px ${({dm}) => (dm ? "transparent" : "#e4e3e3")};
+ display: flex;
+ cursor: pointer;
+ padding: 8px 0;
+ margin: 5px 0;
+ position: relative;
+ box-shadow: 2px 2px 3px ${({dm}) => (dm ? "transparent" : "#e4e3e3")};
 `;
 
 const AuthSlider = styled.div<{opt: string; dm: boolean}>`
-	position: absolute;
-	width: 50%;
-	background-color: ${({dm}) => (dm ? "#fff" : "#69654C")};
-	height: 3px;
-	bottom: 0;
-	left: ${({opt}) => (opt === "left" ? 0 : "50%")};
-	transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+ position: absolute;
+ width: 50%;
+ background-color: ${({dm}) => (dm ? "#fff" : "#69654C")};
+ height: 3px;
+ bottom: 0;
+ left: ${({opt}) => (opt === "left" ? 0 : "50%")};
+ transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 `;
 
 const AuthTitle = styled.p<{cl: string}>`
-	flex: 1;
-	padding: 10px;
-	color: ${({cl}) => cl};
-	font-weight: 500;
-	text-align: center;
+ flex: 1;
+ padding: 10px;
+ color: ${({cl}) => cl};
+ font-weight: 500;
+ text-align: center;
 
-	:hover {
-		background-color: rgba(0, 0, 0, 0.0044444);
-	}
+ :hover {
+  background-color: rgba(0, 0, 0, 0.0044444);
+ }
 `;
 
 const AuthOpt = styled.div<{opt: string}>`
-	width: max-content;
-	transition: all 1s cubic-bezier(0.165, 0.84, 0.44, 1);
-	display: flex;
-	transform: ${({opt}) =>
-		opt === "left" ? "translateX(0)" : "translateX(-300px)"};
-	margin-top: 20px;
+ width: max-content;
+ transition: all 1s cubic-bezier(0.165, 0.84, 0.44, 1);
+ display: flex;
+ transform: ${({opt}) => opt === "left" ? "translateX(0)" : "translateX(-300px)"};
+ margin-top: 20px;
 `;
 
 const Register = styled.form`
-	width: 300px;
-	display: flex;
-	flex-direction: column;
-	gap: 15px;
-	${sm({width: "300px"})}
+ width: 300px;
+ display: flex;
+ flex-direction: column;
+ gap: 15px;
+ ${sm({width: "300px"})}
 `;
 
 const Login = styled.form`
-	width: 300px;
-	display: flex;
-	flex-direction: column;
-	gap: 15px;
+ width: 300px;
+ display: flex;
+ flex-direction: column;
+ gap: 15px;
 `;
 
 const Input = styled.input<{dm: boolean}>`
-	border: 1px solid ${({dm}) => (dm ? "transparent" : "#999")};
-	padding: 15px;
-	border-radius: 3px;
-	font-size: 18px;
-	outline: none;
-	background-color: ${({dm}) => (dm ? "#181818" : "transparent")};
-	color: ${({dm}) => (dm ? "#fff" : "#111")};
+ border: 1px solid ${({dm}) => (dm ? "transparent" : "#999")};
+ padding: 15px;
+ border-radius: 3px;
+ font-size: 18px;
+ outline: none;
+ background-color: ${({dm}) => (dm ? "#181818" : "transparent")};
+ color: ${({dm}) => (dm ? "#fff" : "#111")};
 `;
 
 const ErrorShow = styled.p`
-	color: red;
-	font-size: 14px;
+ color: red;
+ font-size: 14px;
 `;
 
 const Button = styled.button<{bg: boolean}>`
-	cursor: pointer;
-	font-weight: 500;
-	background-color: ${({bg}) => (bg ? "#0f0f0f" : "#69654c")};
-	border: none;
-	outline: none;
-	font-size: 16px;
-	padding: 15px 22px;
-	border-radius: 4px;
-	color: #fff;
+ cursor: pointer;
+ font-weight: 600;
+ background-color: ${({bg}) => (bg ? "#0f0f0f" : "#69654c")};
+ border: none;
+ outline: none;
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ gap: 8px;
+ padding: 15px 22px;
+ border-radius: 4px;
+ font-size: 16px;
+ color: #fff;
 `;
