@@ -3,7 +3,7 @@ import {NextRequest, NextResponse} from "next/server";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-export let jwt_key = "1nx8wg7wtc9picwkmn82ghbncw";
+let jwt_key = "1nx8wg7wtc9picwkmn82ghbncw";
 
 export async function POST(req: NextRequest) {
  const {email, password} = await req.json();

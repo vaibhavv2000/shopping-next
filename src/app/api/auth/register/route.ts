@@ -2,7 +2,8 @@ import pg from "@/lib/pg";
 import {NextRequest, NextResponse} from "next/server";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import {jwt_key} from "../login/route";
+
+let jwt_key = "1nx8wg7wtc9picwkmn82ghbncw";
 
 export async function POST(req: NextRequest) {
  const {email,name,password} = await req.json();
