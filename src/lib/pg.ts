@@ -1,11 +1,13 @@
 import {Client} from "pg";
 
+const {DB_HOST, DB_USER, DB_NAME, DB_PORT, DB_PWD} = process.env;
+
 const pg = new Client({
- host: "pg-1a6da4a3-vaibhavk1965-e15c.i.aivencloud.com",
- user: "avnadmin",
- database: "defaultdb",
- port: 10758,
- password: "AVNS_Is_cElUofI7Gwo4eFEA",
+ host: DB_HOST,
+ user: DB_USER,
+ database: DB_NAME,
+ port: Number(DB_PORT),
+ password: DB_PWD,
  ssl: {
   rejectUnauthorized: false,
  },
