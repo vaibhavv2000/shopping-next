@@ -9,3 +9,7 @@
 # PostgreSQL is hosted on aiven.com
 
 # This app is hosted on vercel.com
+
+# Warning - This app will not run on your machine as the database is hosted remotely and .env file is not pushed. You can check it at src/lib/pg.ts file
+
+# Thanks for reading
