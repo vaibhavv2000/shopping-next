@@ -2,49 +2,52 @@
 
 import styled from "styled-components";
 import {useState,useEffect} from "react";
-import {addProducts,product} from "@/redux/slices/productSlice";
 import List from "./List";
-import {API} from "@/lib/API";
 import {useAppDispatch, useAppSelector} from "@/lib/redux";
+import type {product} from "@/utils/types";
+import {API} from "@/lib/API";
+import {addProducts} from "@/redux/productSlice";
 
-const Home = (): JSX.Element => {
+const Home = () => {
  const [randomProducts,setRandomProducts] = useState<product[]>([]);
  const [watches,setWatches] = useState<product[]>([]);
  const [mobiles,setMobiles] = useState<product[]>([]);
  const [clothes,setClothes] = useState<product[]>([]);
 
- const {products} = useAppSelector((state) => state.product);
- const auth = useAppSelector(state => state.auth);
- const {isDarkMode} = auth;
-
  const dispatch = useAppDispatch();
 
+ const {products} = useAppSelector((state) => state.product);
+ const {isDarkMode} = useAppSelector(state => state.user);
+
  useEffect(() => {
-  document.title = `Home`;
+  async function getProducts() {
+   const res = await API.get("/product/fetchproducts");
+   const data = await res.data;
+   dispatch(addProducts(data));
+  };
+  
+  getProducts();
  },[]);
 
  useEffect(() => {
-  const list = [...products];
-  const random = list.sort((a,b) => Math.random() - 0.5).slice(0,4);
-  setRandomProducts(random);
+  setRandomProducts([...products].sort(() => Math.random() - 0.5).slice(0,4));
  },[products]);
 
  useEffect(() => {
   const list = [...products];
 
   const pro = (type: "watch" | "clothes" | "mobile") => {
-   return list
-   .filter((m) => m.type === type).sort((a,b) => Math.random() - 0.5).slice(0,4);
+   return list.filter((item) => item.type === type).sort(() => Math.random() - 0.5).slice(0,4);
   };
 
   const watches = pro("watch");
   const clothes = pro("clothes");
-  const mobiles_data = pro("mobile");
+  const mobilesData = pro("mobile");
 
   if(mobiles.length < 1) {
    setWatches(watches);
    setClothes(clothes);
-   setMobiles(mobiles_data);
+   setMobiles(mobilesData);
   };
  },[products]);
 
@@ -72,7 +75,7 @@ const Main = styled.div<{isDarkMode: boolean}>`
 `;
 
 const ProductBox = styled.div`
-  max-width: 800px;
+  max-width: 1140px;
   height: 50px;
   width: 100%;
   height: max-content;

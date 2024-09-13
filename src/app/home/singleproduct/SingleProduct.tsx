@@ -1,14 +1,15 @@
 "use client";
 
-import {product} from "@/redux/slices/productSlice";
 import styled from "styled-components";
 import {useState, useEffect} from "react";
-import {addToBag,addToWishlist,removeFromBag,removeFromWishlist} from "@/redux/slices/userSlice";
 import {API} from "@/lib/API";
-import {AiFillHeart, AiOutlineHeart, AiFillStar} from "react-icons/ai";
+import {AiFillHeart, AiFillStar} from "react-icons/ai";
 import {ImPriceTag} from "react-icons/im";
-import {toggleShowAuth} from "@/redux/slices/authSlice";
 import {useAppDispatch, useAppSelector} from "@/lib/redux";
+import type {product} from "@/utils/types";
+import {toggleAuthModal} from "@/redux/userSlice";
+import {addToBag, addToWishlist, removeFromBag, removeFromWishlist} from "@/redux/productSlice";
+import {IoHeartOutline} from "react-icons/io5";
 
 const SingleProduct = ({id}:{id:string}) => {
  const [product, setProduct] = useState<product>();
@@ -16,79 +17,47 @@ const SingleProduct = ({id}:{id:string}) => {
  const [isInCart, setIsInCart] = useState<boolean>(false);
 
  const products = useAppSelector(state => state.product.products);
- const {wishlist, my_orders} = useAppSelector(state => state.user);
- const {isAuth, user, isDarkMode} = useAppSelector(state => state.auth);
+ const {wishlist, myOrders} = useAppSelector(state => state.product);
+ const {user, isDarkMode} = useAppSelector(state => state.user);
 
  const dispatch = useAppDispatch();
 
  useEffect(() => {
-  document.title = `${product?.product_name}`;
+  document.title = `${product?.title}`;
  }, [product]);
 
  useEffect(() => {
-  const p = products.find((p) => String(p.id) === String(id));
-  setProduct(p);
+  setProduct(products.find(product => String(product.id) === String(id)));
  }, [products, id]);
 
  useEffect(() => {
-  const pro = wishlist.find((p) => String(p.id) === String(id));
-  if (pro) setIsWished(true);
+  setIsWished(wishlist.some((prdouct) => String(prdouct.id) === String(id)));
  }, [wishlist, id]);
 
  useEffect(() => {
-  const pro = my_orders.find((p) => String(p.id) === String(id));
-  if (pro) setIsInCart(true);
- }, [my_orders, id]);
+  setIsInCart(myOrders.some((product) => String(product.id) === String(id)));
+ }, [myOrders, id]);
 
- const addToCart = async (opt: string) => {
-  if (!isAuth) return dispatch(toggleShowAuth(true));
+ const addToCart = async (option: boolean) => {
+  if(!user.email) return dispatch(toggleAuthModal());
+  setIsInCart(option);
+  dispatch(option ? addToBag({...product, quantity: 1}) : removeFromBag(product?.id));
 
-  if (opt === "add") {
-   setIsInCart(true);
-   dispatch(addToBag({...product, quantity: 1}));
-   await API.post("/product/addorder", {
-    userId: user.id,
-	productId: id,
-   });
-  };
-
-  if (opt === "remove"){
-   setIsInCart(false);
-   dispatch(removeFromBag(product?.id));
-   await API.post("/product/removefromorder", {
-    userId: user.id,
-	productId: id,
-	del: true,
-   });
-  };
+  if(option) await API.post(`/product/addorder`, {productId: id});
+  else await API.delete(`/product/removefromorder?id=${id}&del=true`);
  };
 
- const addToWish = async (opt: string) => {
-  if (!isAuth) return dispatch(toggleShowAuth(true));
-
-  if (opt === "add") {
-   setIsWished(true);
-   dispatch(addToWishlist(product));
-   await API.post("/product/addtowishlist", {
-    userId: user.id,
-	productId: id,
-   });
-  };
-
-  if(opt === "remove"){
-   setIsWished(false);
-   dispatch(removeFromWishlist(product?.id));
-   await API.post("/product/removefromwishlist", {
-	userId: user.id,
-	productId: id,
-   });
-  };
+ const updateWishlist = async (option: boolean) => {
+  if(!user.email) return dispatch(toggleAuthModal());
+  setIsWished(option);
+  dispatch(option ? addToWishlist(product) : removeFromWishlist(product?.id));
+  await API.put(`/product/updatewishlist?id=${product?.id}&${option && "add=true"}`);
  };
 
  return (
   <Main isDarkMode={isDarkMode}>
    <Product bg={isDarkMode ? "#111" : "#fff"}>
-	<Image src={product?.image} alt={product?.product_name} />
+	<Image src={product?.image} alt={product?.title} />
     <div style={{
      display: "flex",
 	 justifyContent: "space-between",
@@ -98,23 +67,19 @@ const SingleProduct = ({id}:{id:string}) => {
 	}}>
 	 <Info>
 	  <Header>
-	   <Title cl={isDarkMode ? "#fff" : "#111"}>
-		{product?.product_name}
-	   </Title>
+	   <Title cl={isDarkMode ? "#fff" : "#111"}>{product?.title}</Title>
 	   {isWished ? (
 	    <AiFillHeart
-		 name='heart'
-		 size={27}
+		 size={24}
 		 color={"red"}
-		 onClick={() => addToWish("remove")}
+		 onClick={() => updateWishlist(false)}
 		 cursor={"pointer"}
 		/>
 	   ) : (
-		<AiOutlineHeart
-		 name='heart'
-		 size={27}
+		<IoHeartOutline
+		 size={24}
 		 color={"#777"}
-		 onClick={() => addToWish("add")}
+		 onClick={() => updateWishlist(true)}
 		 cursor={"pointer"}
 		/>
 	   )}
@@ -132,8 +97,8 @@ const SingleProduct = ({id}:{id:string}) => {
 	  </Description>
 	 </Info>
 	 <AddBtn
-	  bg={isDarkMode ? "#5555" : "#111"}
-	  onClick={() => addToCart(isInCart ? "remove" : "add")}
+	  bg={isDarkMode ? "#181818" : "#111"}
+	  onClick={() => addToCart(!isInCart)}
 	 >
 	  {isInCart ? "Remove From" : "Add To"} Bag
 	 </AddBtn>
@@ -161,8 +126,7 @@ const Main = styled.div<{isDarkMode: boolean}>`
 
 const Product = styled.div<{bg: string}>`
  display: flex;
- flex-direction: row;
- max-width: 700px;
+ max-width: 740px;
  background-color: ${({bg}) => bg};
  gap: 5px;
  width: 100%;
@@ -174,7 +138,7 @@ const Product = styled.div<{bg: string}>`
 `;
 
 const Image = styled.img`
- width: 350px;
+ width: 370px;
  border-radius: 4px solid red;
  object-fit: cover;
 
@@ -195,7 +159,7 @@ const Info = styled.div`
 const Header = styled.div`
  display: flex;
  justify-content: space-between;
- align-items: center;
+ align-items: flex-start;
  gap: 10px;
  padding: 5px 0;
 `;
@@ -236,10 +200,10 @@ const AddBtn = styled.button<{bg: string}>`
  background-color: ${({bg}) => bg};
  border: none;
  outline: none;
- border-radius: 5px;
+ border-radius: 4px;
  color: #fff;
- padding: 12px 22px;
+ padding: 14px 22px;
  cursor: pointer;
- margin: 20px 20px;
+ margin: 20px;
  font-weight: 600;
 `;

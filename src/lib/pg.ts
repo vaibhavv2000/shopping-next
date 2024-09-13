@@ -1,19 +1,23 @@
-import {Client} from "pg";
+import {Pool} from "pg";
 
-const {DB_HOST, DB_USER, DB_NAME, DB_PORT, DB_PWD} = process.env;
+const local = {
+ host: "localhost",
+ user: "postgres",
+ port: 5432,
+ password: process.env.LOCAL_DB_PASSWORD,
+ database: "shopping",
+};
 
-const pg = new Client({
- host: DB_HOST,
- user: DB_USER,
- database: DB_NAME,
- port: Number(DB_PORT),
- password: DB_PWD,
- ssl: {
-  rejectUnauthorized: false,
- },
-});
+const prod = {
+ connectionString: process.env.POSTGRES_URL,
+ ssl: {rejectUnauthorized: false,},
+};
 
-pg.connect();
+const config = process.env.NODE_ENV === "development" ? local : prod;
+
+const pg = new Pool(config);
+
+pg.connect(() => console.log("CONNECTED DB"));
 
 pg.on("error",(err) => console.log(err));
 

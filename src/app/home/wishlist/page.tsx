@@ -1,4 +1,4 @@
-import {Metadata} from 'next';
+import type {Metadata} from 'next';
 import Wishlist from './Wishlist';
 
 export const metadata: Metadata = {

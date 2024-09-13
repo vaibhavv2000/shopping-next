@@ -230,29 +230,29 @@ const watches: product[] = [
 
 const products = [...shirts,...mobiles,...watches];
 
-export const addProducts = () => {
- for(let i of products) {
-  const add_product = async (p: product) => {
-   const {description,image,name,price,type} = p;
-   const rating = ((Math.random() * 2) + 3).toFixed(2);
- 
-   const values = [name,type,description,image,price,rating];
- 
-   try {
-    const add = await pg.query(
-     `INSERT INTO products (product_name, type, description, image, price, rating) 
-      VALUES ($1, $2 ,$3, $4, $5, $6)`,
-      values
-    );
- 
-    console.log("Added new product");
-   } catch(error) {
-    console.log("Product add error",error);
-   }
-  }
+const addProducts = async () => {
+ const addProduct = async (product: product) => {
+ const {description, image, name, price, type} = product;
+ const rating = ((Math.random() * 2) + 3).toFixed(2);
+ const values = [name, type, description, image, price, rating];
 
-  add_product(i);
+ try {
+  await pg.query(
+   `INSERT INTO products (title, type, description, image, price, rating)
+    VALUES ($1, $2, $3, $4, $5, $6)`,
+   values
+  );
+ } catch(error) {
+  console.log(`Product add error for ${name}:`, error);
  };
-
- console.log("Adding process completed");
 };
+
+ try {
+  await Promise.all(products.map(addProduct));
+  console.log("All products added successfully");
+ } catch (error) {
+  console.log("Error adding products:", error);
+ };
+};
+
+export default addProducts;

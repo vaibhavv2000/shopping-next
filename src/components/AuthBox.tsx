@@ -1,16 +1,18 @@
 "use client";
 
-import {useState, ChangeEvent, FormEvent, useEffect} from "react";
+import {useState, type ChangeEvent, FormEvent, useEffect} from "react";
 import styled from "styled-components";
-import {login as login_user, toggleShowAuth} from "@/redux/slices/authSlice";
 import {sm} from "@/lib/responsive";
 import {API} from "@/lib/API";
 import {HiXMark} from "react-icons/hi2";
 import {useAppDispatch, useAppSelector} from "@/lib/redux";
 import Loader from "./Loader";
+import {login as loginUser} from "../redux/userSlice";
+import {validateEmail} from "@/lib/emailValidator";
+import {toggleAuthModal} from "@/redux/userSlice";
 
-const AuthBox = (): JSX.Element => {
- const [aOpt, setAOpt] = useState<"left" | "right">("left");
+const AuthBox = () => {
+ const [authOption, setAuthOption] = useState<"login" | "register">("login");
  const [register, setRegister] = useState({
   name: "",
   email: "",
@@ -20,121 +22,114 @@ const AuthBox = (): JSX.Element => {
   email: "",
   password: "",
  });
- const [loginError, setLoginError] = useState<string>("");
- const [registerError, setRegisterError] = useState<string>("");
+ const [loginError, setLoginError] = useState("");
+ const [registerError, setRegisterError] = useState("");
  const [loading, setLoading] = useState(false);
 
+ const {isDarkMode} = useAppSelector(state => state.user);
  const dispatch = useAppDispatch();
-
- const {showAuth, isDarkMode} = useAppSelector(state => state.auth);
 
  useEffect(() => {
   if (loginError) setTimeout(() => setLoginError(""), 5000);
   if (registerError) setTimeout(() => setRegisterError(""), 5000);
  }, [loginError, registerError]);
 
- const AuthOpts = (opt: string) => {
-  if (opt === "left") setAOpt("left");
-  else setAOpt("right");
- };
-
  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
   event.preventDefault();
-
   if(loading) return;
 
-  setLoading(true);
-
   try {
-   if (aOpt === "left") {
-	const {email, name, password} = register;
+   if (authOption === "register") {
+	let {email, name, password} = register;
+	name = name.trim();
+	email = email.trim();
+	password = password.trim();
 
 	if(!name || !email || !password) return setRegisterError("All fields are necessary");
+	if(name.length < 3) return setRegisterError("Name should have atleast 3 characters");
+	if(!validateEmail(email)) return setRegisterError("Invalid Email");
+	if(password.length < 8) return setRegisterError("Password must  be atleast 8 characters");
+	if(password.includes(" ")) return setRegisterError("Password should not include spaces");
 
 	const res = await API.post(`/auth/register`, register);
-	localStorage.setItem("shopping-user", JSON.stringify(res.data.user));
+	localStorage.setItem("shopping-auth", "true");
 
 	setRegister({email: "", password: "", name: ""});
 
-	dispatch(login_user(res.data.user));
-	dispatch(toggleShowAuth(false));
+	dispatch(loginUser(res.data.user));
+	dispatch(toggleAuthModal());
    };
 
-   if(aOpt === "right") {
-	const {email, password} = login;
+   if(authOption === "login") {
+	let {email, password} = login;
 
 	if(!email || !password) return setLoginError("All fields are necessary");
+	if(!validateEmail(email)) return setLoginError("Invalid Email");
+	if(password.length < 8) return setLoginError("Password must  be atleast 8 characters");
+	if(password.includes(" ")) return setLoginError("Password should not include spaces");
 
 	const res = await API.post(`/auth/login`, login);
-	localStorage.setItem("shopping-user", JSON.stringify(res.data.user));
+	localStorage.setItem("shopping-user", "auth");
 
 	setLogin({email: "", password: ""});
 
-	dispatch(login_user(res.data.user));
-	dispatch(toggleShowAuth(false));
+	dispatch(loginUser(res.data.user));
+	dispatch(toggleAuthModal());
    };
   } catch (error: any) {
-   if (aOpt === "left") setRegisterError(error.response.data.message);
+   if (authOption === "register") setRegisterError(error?.response?.data?.message);
    else setLoginError(error.response.data.message);
   } finally {
    setLoading(false);
   };
  };
 
- if (!showAuth) return <div></div>;
-
  return (
   <Main>
    <Box bg={isDarkMode ? "black" : "#fff"}>
-	<div style={{display: "flex", alignItems: "center"}}>
+	<div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
 	 <HeaderTitle cl={isDarkMode ? "#fff" : "#111"}>Auth</HeaderTitle>
 	  <HiXMark
 	   size={28}
-	   color={isDarkMode ? "#fff" : "#111"}
+	   color={isDarkMode ? "#fff" : "#666"}
 	   style={{cursor: "pointer"}}
-	   onClick={() => dispatch(toggleShowAuth(false))}
+	   onClick={() => dispatch(toggleAuthModal())}
 	  />
 	</div>
 	<AuthOptions dm={isDarkMode}>
 	 <AuthTitle
 	   cl={isDarkMode ? "#fff" : "#111"}
-	   onClick={() => AuthOpts("left")}>
+	   onClick={() => setAuthOption("register")}>
 	   Register
 	 </AuthTitle>
 	 <AuthTitle
 	   cl={isDarkMode ? "#fff" : "#111"}
-	   onClick={() => AuthOpts("right")}>
+	   onClick={() => setAuthOption("login")}>
 	   Login
 	 </AuthTitle>
-	 <AuthSlider dm={isDarkMode} opt={aOpt}></AuthSlider>
+	 <AuthSlider dm={isDarkMode} opt={authOption}></AuthSlider>
 	</AuthOptions>
 	<div style={{width: "300px", overflowX: "hidden"}}>
-	 <AuthOpt opt={aOpt}>
+	 <AuthOpt opt={authOption}>
 	  <Register onSubmit={handleSubmit}>
 	   <Input
 		placeholder='Name'
 		name='name'
 		dm={isDarkMode}
-		onChange={(e: ChangeEvent<HTMLInputElement>) =>
-		 setRegister((p) => ({...p, [e.target.name]: e.target.value}))
-		}
+		onChange={(e) => setRegister((p) => ({...p, [e.target.name]: e.target.value}))}
 	   />
 	   <Input
 		dm={isDarkMode}
 		placeholder='Email'
 		name='email'
-		onChange={(e: ChangeEvent<HTMLInputElement>) =>
-		 setRegister((p) => ({...p,[e.target.name]: e.target.value,}))
-		}
+		onChange={e => setRegister((p) => ({...p,[e.target.name]: e.target.value,}))}
 	   />
 	   <Input
 		placeholder='Password'
 		type='password'
 		dm={isDarkMode}
 		name='password'
-		onChange={(e: ChangeEvent<HTMLInputElement>) =>
-		 setRegister((p) => ({...p,[e.target.name]: e.target.value,}))
-		}
+		onChange={e => setRegister((p) => ({...p,[e.target.name]: e.target.value,}))}
 	   />
 	   {registerError && <ErrorShow>{registerError}</ErrorShow>}
 	  <Button bg={isDarkMode}>
@@ -147,24 +142,20 @@ const AuthBox = (): JSX.Element => {
 		placeholder='Email'
 		name='email'
 		dm={isDarkMode}
-		onChange={(e: ChangeEvent<HTMLInputElement>) =>
-		 setLogin((p) => ({...p, [e.target.name]: e.target.value,}))
-		}
+		onChange={({target}) => setLogin((prev) => ({...prev, [target.name]: target.value,}))}
 	   />
 	   <Input
 		dm={isDarkMode}
 		placeholder='Password'
 		type='password'
 		name='password'
-		onChange={(e: ChangeEvent<HTMLInputElement>) =>
-	     setLogin((p) => ({...p,[e.target.name]: e.target.value,}))
-		}
+		onChange={({target}) => setLogin((prev) => ({...prev, [target.name]: target.value,}))}
 	   />
-	   {loginError && <ErrorShow>{loginError}</ErrorShow>}
-	   <Button bg={isDarkMode}>
-		Login
-		{loading && <span className="scale-25"><Loader color="#fff" size={16} /></span>}
-	   </Button>
+	  {loginError && <ErrorShow>{loginError}</ErrorShow>}
+	  <Button bg={isDarkMode}>
+	   Login
+	   {loading && <span className="scale-25"><Loader color="#fff" size={16} /></span>}
+	  </Button>
 	  </Login>
 	 </AuthOpt>
 	</div>
@@ -182,15 +173,16 @@ const Main = styled.div`
  left: 0;
  position: fixed;
  z-index: 1000000;
- background-color: rgba(0, 0, 0, 0.333);
+ background-color: rgba(0, 0, 0, 0.5);
  display: grid;
  place-items: center;
 `;
 
 const Box = styled.div<{bg: string}>`
  background-color: ${({bg}) => bg};
- border-radius: 5px;
+ border-radius: 8px;
  padding: 20px;
+ max-width: 340px;
 `;
 
 const HeaderTitle = styled.h1<{cl: string}>`
@@ -198,7 +190,6 @@ const HeaderTitle = styled.h1<{cl: string}>`
  font-weight: 600;
  color: ${({cl}) => cl};
  text-align: center;
- flex: 1;
 `;
 
 const AuthOptions = styled.div<{dm: boolean}>`
@@ -207,16 +198,15 @@ const AuthOptions = styled.div<{dm: boolean}>`
  padding: 8px 0;
  margin: 5px 0;
  position: relative;
- box-shadow: 2px 2px 3px ${({dm}) => (dm ? "transparent" : "#e4e3e3")};
 `;
 
 const AuthSlider = styled.div<{opt: string; dm: boolean}>`
  position: absolute;
  width: 50%;
- background-color: ${({dm}) => (dm ? "#fff" : "#69654C")};
+ background-color: ${({dm}) => (dm ? "#fff" : "dodgerblue")};
  height: 3px;
  bottom: 0;
- left: ${({opt}) => (opt === "left" ? 0 : "50%")};
+ left: ${({opt}) => (opt === "register" ? 0 : "50%")};
  transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 `;
 
@@ -236,7 +226,7 @@ const AuthOpt = styled.div<{opt: string}>`
  width: max-content;
  transition: all 1s cubic-bezier(0.165, 0.84, 0.44, 1);
  display: flex;
- transform: ${({opt}) => opt === "left" ? "translateX(0)" : "translateX(-300px)"};
+ transform: ${({opt}) => opt === "register" ? "translateX(0)" : "translateX(-300px)"};
  margin-top: 20px;
 `;
 
@@ -256,12 +246,12 @@ const Login = styled.form`
 `;
 
 const Input = styled.input<{dm: boolean}>`
- border: 1px solid ${({dm}) => (dm ? "transparent" : "#999")};
- padding: 15px;
+ border: none;
+ padding: 16px;
  border-radius: 3px;
- font-size: 18px;
+ font-size: 14px;
  outline: none;
- background-color: ${({dm}) => (dm ? "#181818" : "transparent")};
+ background-color: ${({dm}) => (dm ? "#181818" : "#f5f5f5")};
  color: ${({dm}) => (dm ? "#fff" : "#111")};
 `;
 
@@ -273,7 +263,7 @@ const ErrorShow = styled.p`
 const Button = styled.button<{bg: boolean}>`
  cursor: pointer;
  font-weight: 600;
- background-color: ${({bg}) => (bg ? "#0f0f0f" : "#69654c")};
+ background-color: ${({bg}) => (bg ? "#0f0f0f" : "#1E90FF")};
  border: none;
  outline: none;
  display: flex;
@@ -282,6 +272,6 @@ const Button = styled.button<{bg: boolean}>`
  gap: 8px;
  padding: 15px 22px;
  border-radius: 4px;
- font-size: 16px;
+ font-size: 14px;
  color: #fff;
 `;

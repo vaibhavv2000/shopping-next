@@ -1,13 +1,15 @@
 import pg from "@/lib/pg";
-import {NextRequest, NextResponse} from "next/server";
+import {getUser} from "@/utils/JWT";
+import type {user} from "@/utils/types";
+import {NextResponse} from "next/server";
 
-export async function POST(req: NextRequest) {
- const {userId} = await req.json();
+export async function POST() {
+ const {id} = getUser() as user;
+ if(!id) return NextResponse.json({message: "Unauthorized"}, {status: 401});
 
  try {
-  await pg.query(`UPDATE userdata SET type = $1 WHERE userid = $2`,["history",userId]);
-  
-  return NextResponse.json("ok",{status:200});
+  await pg.query(`UPDATE userdata SET category = $1 WHERE userId = $2`,["history", id]);
+  return NextResponse.json({success: true},{status:200});
  } catch(error) {
   return NextResponse.json(error,{status:500});
  };

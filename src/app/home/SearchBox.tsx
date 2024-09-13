@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-const SearchBox = (): JSX.Element => {
+const SearchBox = () => {
  return (
  <Search>
   <SearchInput>

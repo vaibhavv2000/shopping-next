@@ -16,11 +16,11 @@ const Filter = (props: props): JSX.Element => {
  const [star,setStar] = useState<number>();
 
  const {order,rating,setOrder,setRating,setShowFilter} = props;
- const {isDarkMode} = useAppSelector(state => state.auth);
+ const {isDarkMode} = useAppSelector(state => state.user);
 
  return (
-  <BoxHolder>
-   <Box isDarkMode={isDarkMode}>
+  <BoxHolder onClick={() => setShowFilter(false)}>
+   <Box isDarkMode={isDarkMode} onClick={e => e.stopPropagation()}>
     <div>
 	 <Top>
   	  <TopTitle isDarkMode={isDarkMode}>Filters</TopTitle>
@@ -28,11 +28,11 @@ const Filter = (props: props): JSX.Element => {
        name='x'
 	   cursor={"pointer"}
 	   size={28}
-	   color={"#f0f0f0"}
+	   color={isDarkMode ? "#FFF" : "#666"}
 	   onClick={() => setShowFilter(false)}
 	  />
 	 </Top>
-	 <div style={{margin: "10px 0px"}}>
+	 <div style={{margin: "14px 0px"}}>
 	  <Title isDarkMode={isDarkMode}>Ratings</Title>
 	  <div style={{marginTop: "5px"}}>
 	   {[4.5,4.0,3.0,2.0,1.0].map((o,index) => (
@@ -48,28 +48,28 @@ const Filter = (props: props): JSX.Element => {
 		   setStar(Number(e.target.value));
 		  }}
 		 />
-		 <p className='text-black/60 font-inter_500'>{o} & above</p>
+		 <p className='text-black/60 font-inter/500'>{o} & above</p>
 	    </Holder>
 	   ))}
 	  </div>
 	 </div>
-	 <div className='mt-4 space-y-1'>
+	 <div className='mt-6 space-y-1'>
   	  <Title isDarkMode={isDarkMode}>Price</Title>
 	  <div>
-	  {["Ascending","Descending"].map((p) => (
-	   <Holder isDarkMode={isDarkMode} key={`acs-${p}`}>
+	  {["Ascending","Descending"].map((order) => (
+	   <Holder isDarkMode={isDarkMode} key={`acs-${order}`}>
 	    <Input
 	     type='radio'
 	     name='asc'
-	     value={p}
-	     checked={asc === p}
+	     value={order}
+	     checked={asc === order}
 	     style={{cursor: "pointer"}}
 	     onChange={(e) => {
-	      setOrder(p);
+	      setOrder(order);
 	      setAsc(e.target.value);
 	     }}
 	    />
-	    <p className='text-black/60 font-inter_500'>{p}</p>
+	    <p className='text-black/60 text-sm font-inter/500'>{order}</p>
 	   </Holder>
 	  ))}
       </div>
@@ -87,16 +87,16 @@ const BoxHolder = styled.div`
  place-items: center;
  height: 100vh;
  width: 100vw;
- background-color: rgba(0,0,0,0.1);
+ background-color: rgba(0,0,0,0.5);
  position: fixed;
  top: 0;
  left: 0;
 `;
 
 const Box = styled.div<{isDarkMode: boolean}>`
- max-width: 300px;
+ max-width: 340px;
  width: 90%;
- padding: 10px;
+ padding: 20px;
  border-radius: 8px;
  background-color: ${({isDarkMode}) => isDarkMode ? "#181818" : "#fff"};
 `;
@@ -109,16 +109,16 @@ const Top = styled.div`
 
 const TopTitle = styled.span<{isDarkMode: boolean}>`
  color: ${({isDarkMode}) => !isDarkMode ? "#111" : "#fff"};
- font-size: 20px;
+ font-size: 28px;
  font-weight: 600;
 `;
 
 const Title = styled.span<{isDarkMode: boolean}>`
  color: ${({isDarkMode}) => !isDarkMode ? "#111" : "#f5f5f5"};
- font-size: 16px;
+ font-size: 14px;
  display: block;
- margin-bottom: 8px;
- font-weight: 700;
+ margin-bottom: 12px;
+ font-weight: 400;
 `;
 
 const Holder = styled.div<{isDarkMode: boolean}>`

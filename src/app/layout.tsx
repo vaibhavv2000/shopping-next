@@ -8,8 +8,8 @@ import Provider from "@/lib/Provider";
 const inter = Inter({subsets: ["latin"]});
 
 export const metadata: Metadata = {
-  title: "Shopkart",
-  description: "Shopping app",
+ title: "Shopkart",
+ description: "Shopping app",
 };
 
 interface props {

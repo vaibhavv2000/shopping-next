@@ -1,87 +1,76 @@
 "use client";
 
 import {API} from "@/lib/API";
-import {addToHistory, changeQuantity, emptyBag,removeFromBag} from "@/redux/slices/userSlice";
 import {useState, useEffect} from "react";
 import {ImPriceTag} from "react-icons/im";
 import {IoMdStar} from "react-icons/io";
 import {GoPlus} from "react-icons/go";
 import {HiMinus} from "react-icons/hi2";
 import styled from "styled-components";
-import Link from "next/link";
 import NotAuth from "@/components/NotAuth";
 import {useAppDispatch, useAppSelector} from "@/lib/redux";
+import {addToHistory, changeQuantity, emptyBag, removeFromBag} from "@/redux/productSlice";
+import {Description, Details, IconHolder, Image, Info, Price, PriceHolder, Product, Rating, RatingHolder, Title, Type, TypeHolder} from "../products/Products";
 
-const Orders = (): JSX.Element => {
+const Orders = () => {
  const [totalPrice, setTotalPrice] = useState<number>(0);
- const {my_orders} = useAppSelector(state => state.user);
- const {isAuth, user, isDarkMode} = useAppSelector(state => state.auth);
+ const {myOrders} = useAppSelector(state => state.product);
+ const {user, isDarkMode} = useAppSelector(state => state.user);
 
  const dispatch = useAppDispatch();
 
  const removeFromOrder = async (id: number) => {
   dispatch(removeFromBag((id)));
-  await API.post("/product/removefromorder", {
-	userId: user.id,
-	productId: id,
-	del: true,
-  });
+  await API.delete(`/product/removefromorder?id=${id}&del=true`);
  };
 
  useEffect(() => {
   let total = 0;
 
-  for(let i of my_orders) {
-   const p = i.quantity * i.price;
-   total += p;
+  for(let order of myOrders) {
+   total += order.quantity * order.price;
   };
 
   setTotalPrice(total);
- }, [my_orders]);
+ }, [myOrders]);
 
- const changeProductQuantity = async (id: number, opt: "incr" | "decr", pId: number) => {
+ const changeProductQuantity = async (id: number, opt: "incr" | "decr",) => {
   const data = {opt, id};
+  dispatch(changeQuantity(data));
 
   try {
    if(opt === "incr") {
-    dispatch(changeQuantity(data));
-	 
     await API.post("/product/addorder",{
-	  productId: id, 
-	  userId: user.id, 
-	  incr: true
+	 productId: id,
+	 incr: true
 	});
    };
 	 
    if(opt === "decr") {
-    dispatch(changeQuantity(data));
-	 
     await API.post("/product/addorder",{
-	  productId: id, 
-	  userId: user.id, 
-	  decr: true
+	 productId: id,
+	 decr: true
     });
    };
   } catch (error) {
-	console.log(error);
+   console.log(error);
   };
  };
 
  const checkout = async () => {
   try {
-	const res = await API.post("/product/confirmorder", {userId: user.id});
-	const data = await res.data;
-	dispatch(addToHistory(my_orders));
-	dispatch(emptyBag());
-	setTotalPrice(0);
+   await API.post("/product/confirmorder", {userId: user.id});
+   dispatch(addToHistory(myOrders));
+   dispatch(emptyBag());
+   setTotalPrice(0);
   } catch (error) {
-	console.log(error);
+   console.log(error);
   };
  };
 
- if (!isAuth) return <NotAuth />;
+ if (!user) return <NotAuth />;
 
- if (my_orders.length < 1) return <NotAuth title='Empty Bag' />;
+ if (myOrders.length < 1) return <NotAuth title='Empty Bag' />;
 
  return (
   <Main isDarkMode={isDarkMode}>
@@ -103,55 +92,65 @@ const Orders = (): JSX.Element => {
 	 </OrderDetails>	
 	</Top>
 	<Products>
-	 {my_orders.map((p) => (
-	  <Product
-	   bg={isDarkMode ? "#111" : "#fff"}
-	   key={String(Math.random())}>
-	    <Image src={p.image} alt='' />
-	    <Info>
-		 <Link href={{pathname: "/home/singleproduct",query: {id: p.id}}}>
-		  <Title cl={isDarkMode ? "#fff" : "#111"}>
-		   {p.product_name}
-		  </Title>
-	     </Link>
-		 <Description cl={isDarkMode ? "#999" : "#444"}>
-		   {p.description.slice(0, 100)}...
-		 </Description>
-		 <PriceHolder>
-		   <ImPriceTag size={18} color={isDarkMode ? "#fff" : "#555"} />
-		   <Price cl={isDarkMode ? "#fff" : "#555"}>{p.price}</Price>
-		 </PriceHolder>
-		 <RatingHolder>
-		   <IoMdStar size={24} color={isDarkMode ? "#fff" : "#555"} />
-		   <Rating cl={isDarkMode ? "#fff" : "#222"}>{p.rating}</Rating>
-		 </RatingHolder>
-		 <QuantityHolder>
-		  <QuantityOpt 
-		   bg={isDarkMode ? "dodgerblue" : "#1E90FF"} 
-		   onClick={() => changeProductQuantity(p.id, "decr", p)}
-		  >
-			<HiMinus size={20} color='#fff' />
-		  </QuantityOpt>
-		  <Quantity cl={isDarkMode ? "#fff" : "#111"}>
-			{p.quantity}
-		  </Quantity>
-		  <QuantityOpt 
-		   bg={isDarkMode ? "dodgerblue" : "#1E90FF"} 
-		   onClick={() => changeProductQuantity(p.id, "incr", p)}
-		   >
-			<GoPlus size={20} color='#fff' />
-		  </QuantityOpt>
-		 </QuantityHolder>
-		 <RemoveProduct>
-		  <RemoveBtn
-			bg={isDarkMode ? "#181818" : "dodgerblue"}
-			onClick={() => removeFromOrder(p.id)}>
-			Remove From cart
-		  </RemoveBtn>
-		 </RemoveProduct>
-		</Info>
-	  </Product>
-	 ))}
+	{myOrders.map((item, index) => (
+	 <Product key={`order-m-${index}`} bg={isDarkMode ? "#111" : "#fff"}>
+	  <Image src={item.image} alt={item.title} />
+	  <Info>
+	   <Title cl={isDarkMode ? "#fff" : "#111"}>
+	    {item.title}
+	   </Title>
+	   <Details>
+	    <Description cl={isDarkMode ? "#f5f5f5" : "#444"}>
+		 {item.description.slice(0, 60)}...
+	    </Description>
+	    <PriceHolder>
+		 <IconHolder>	
+		  <ImPriceTag size={16} color={isDarkMode ? "#fff" : "#585858"} />
+		 </IconHolder> 
+		 <Price cl={isDarkMode ? "#fff" : "#555"}>{item.price}</Price>
+	    </PriceHolder>
+	    <RatingHolder>
+		 <IconHolder>
+		  <IoMdStar size={22} color={isDarkMode ? "#e8e8e8" : "#4b4b4b"} />				
+		 </IconHolder>
+		 <Rating cl={isDarkMode ? "#e8e8e8" : "#222"}>
+		  {item.rating}
+		 </Rating>
+	    </RatingHolder>
+	    <QuantityHolder>
+         <QuantityOpt 
+          bg={isDarkMode ? "dodgerblue" : "#1E90FF"} 
+          onClick={() => changeProductQuantity(item.id, "decr")}
+         >
+          <HiMinus size={20} color='#fff' />
+         </QuantityOpt>
+         <Quantity cl={isDarkMode ? "#fff" : "#111"}>
+          {item.quantity}
+         </Quantity>
+         <QuantityOpt 
+          bg={isDarkMode ? "dodgerblue" : "#1E90FF"} 
+          onClick={() => changeProductQuantity(item.id, "incr",)}
+         >
+          <GoPlus size={20} color='#fff' />
+         </QuantityOpt>
+        </QuantityHolder>
+       <RemoveProduct>
+        <RemoveBtn
+         bg={isDarkMode ? "#181818" : "dodgerblue"}
+         onClick={() => removeFromOrder(item.id)}
+        >
+         Remove From cart
+        </RemoveBtn>
+       </RemoveProduct>
+	  </Details>
+	  <div style={{flex: 1, display: "flex", alignItems: "flex-end",}}>
+	   <TypeHolder cl={isDarkMode}>
+		<Type>{item.type}</Type>
+	   </TypeHolder>
+	  </div>
+	 </Info>
+	</Product> 
+	))}
 	</Products>
    </ProductBox>
   </Main>
@@ -170,8 +169,7 @@ const Main = styled.div<{isDarkMode: boolean}>`
 `;
 
 const ProductBox = styled.div`
-	max-width: 800px;
-	height: 50px;
+	max-width: 1140px;
 	position: relative;
 	padding-bottom: 70px;
 	width: 100%;
@@ -182,6 +180,8 @@ const Top = styled.div`
    display: flex;
    justify-content: space-between;
    align-items: center;
+   padding-right: 12px;
+   flex-wrap: wrap;
 `;
 
 const Header = styled.div`
@@ -189,7 +189,7 @@ const Header = styled.div`
 	position: relative;
 	justify-content: space-between;
 	align-items: center;
-	padding: 7px 10px;
+	padding: 8px 10px;
 `;
 
 const HeadTitle = styled.h2<{cl: string}>`
@@ -201,65 +201,7 @@ const Products = styled.div`
 	display: grid;
 	padding: 10px;
 	gap: 15px;
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-`;
-
-const Product = styled.div<{bg: string}>`
-	display: flex;
-	flex-direction: column;
-	box-shadow: 2px 5px 5px #11111115;
-	gap: 10px;
-	background-color: ${({bg}) => bg};
-`;
-
-const Image = styled.img`
-	height: 250px;
-	object-fit: cover;
-	border-radius: 5px;
-	width: 100%;
-`;
-
-const Info = styled.div`
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding: 10px 5px;
-`;
-
-const Title = styled.h3<{cl: string}>`
-	color: ${({cl}) => cl};
-	cursor: pointer;
-	height: 70px;
-`;
-
-const Description = styled.p<{cl: string}>`
-	color: ${({cl}) => cl};
-	font-size: 16px;
-`;
-
-const PriceHolder = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 10px;
-`;
-
-const Price = styled.span<{cl: string}>`
-	color: ${({cl}) => cl};
-	font-weight: 500;
-	font-size: 14px;
-`;
-
-const RatingHolder = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin: -5px 0px;
-`;
-
-const Rating = styled.span<{cl: string}>`
-	color: ${({cl}) => cl};
-	font-weight: 500;
-	font-size: 14px;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 `;
 
 const RemoveProduct = styled.div`
@@ -275,7 +217,7 @@ const RemoveBtn = styled.button<{bg: string}>`
 	outline: none;
 	border-radius: 2px;
 	font-weight: 500;
-	box-shadow: 2px 5px 5px #00000029;
+	box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 	cursor: pointer;
 `;
 

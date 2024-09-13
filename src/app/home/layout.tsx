@@ -2,7 +2,6 @@ import {Metadata} from "next";
 import {ReactNode} from "react";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
-import AuthBox from "@/components/AuthBox";
 
 export const metadata: Metadata = {
  title: "Home",
@@ -11,10 +10,9 @@ export const metadata: Metadata = {
 
 const Layout = ({children}: {children: ReactNode}) => {
  return (
-  <main>
+  <main style={{display: "flex", flexDirection: "column", minHeight: "100vh"}}>
    <Navbar />
    <Sidebar />
-   <AuthBox />
    {children}
   </main>
  );

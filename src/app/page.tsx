@@ -1,10 +1,11 @@
-import {Metadata} from 'next';
-import Intro from './Main';
+import type {Metadata} from 'next';
+import Main from './components/Main';
 
 export const metadata: Metadata = {
- title: "Welcome"
+ title: "Welcome",
+ description: 'Shop at best Prices'
 };
 
-const Page = () => <Intro />;
+const Page = () => <Main />;
 
 export default Page;

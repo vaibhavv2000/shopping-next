@@ -1,28 +1,26 @@
 "use client";
 
-import { RootState } from "@/redux/store";
-import React from "react";
-import { AiFillShopping } from "react-icons/ai";
-import { useSelector } from "react-redux";
+import {useAppSelector} from "@/lib/redux";
+import {AiFillShopping} from "react-icons/ai";
 import styled from "styled-components";
 
 interface props {
-  title?: string;
-}
+ title?: string;
+};
 
-const NotAuth = (props: props): JSX.Element => {
-  const { isDarkMode } = useSelector((state: RootState) => state.auth);
+const NotAuth = ({title}: props) => {
+ const {isDarkMode} = useAppSelector(state => state.user);
 
-  return (
-    <Main bg={isDarkMode ? "#181818" : "#fff"}>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <AiFillShopping size={70} color={isDarkMode ? "#fff" : "#111"} />
-      </div>
-      <Title cl={isDarkMode ? "#fff" : "#111"}>
-        {props.title ? props.title : "Not Logged In"}
-      </Title>
-    </Main>
-  );
+ return (
+  <Main bg={isDarkMode ? "#181818" : "#fff"}>
+   <div style={{ display: "flex", justifyContent: "center" }}>
+    <AiFillShopping size={70} color={isDarkMode ? "#fff" : "#111"} />
+   </div>
+   <Title cl={isDarkMode ? "#fff" : "#111"}>
+    {title || "Not Logged In"}
+   </Title>
+  </Main>
+ );
 };
 
 export default NotAuth;

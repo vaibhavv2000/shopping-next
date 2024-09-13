@@ -2,19 +2,19 @@
 
 import styled from "styled-components";
 import {IoMdStar} from "react-icons/io";
-import {MdOutlineProductionQuantityLimits} from "react-icons/md";
 import {ImPriceTag} from "react-icons/im";
-import Link from "next/link";
 import {useAppSelector} from "@/lib/redux";
 import NotAuth from "@/components/NotAuth";
+import {Description, Details, IconHolder, Image, Info, Price, PriceHolder, Product, Rating, RatingHolder, Title, Type, TypeHolder} from "../products/Products";
+import {PiShoppingCartSimpleFill} from "react-icons/pi";
 
-const History = (): JSX.Element => {
- const {order_history} = useAppSelector((state) => state.user);
- const {isAuth, isDarkMode} = useAppSelector((state) => state.auth);
+const History = () => {
+ const {user, isDarkMode} = useAppSelector(state => state.user);
+ const {orderHistory} = useAppSelector(state => state.product);
 
- if (!isAuth) return <NotAuth />;
+ if (!user) return <NotAuth />;
 
- if (order_history.length < 1) return <NotAuth title='No Order History' />;
+ if (orderHistory.length < 1) return <NotAuth title='No Order History' />;
 
  return (
   <Main isDarkMode={isDarkMode}>
@@ -23,36 +23,48 @@ const History = (): JSX.Element => {
 	 <HeadTitle cl={isDarkMode ? "#fff" : "#111"}>My Order History</HeadTitle>
 	</Header>
 	<Products>
-	 {order_history.map((p,index) => (
-	  <Product bg={isDarkMode ? "#111" : "#fff"} key={`hist-${index}`}>
-	  <Link href={{pathname: "/home/singleproduct",query: {id: p.id}}} style={{textDecoration:"none"}}>
-	   <Top>
-		<Image src={p.image} alt={p.product_name} />
-	   </Top>
-	   <Info>
-		<Title cl={isDarkMode ? "#fff" : "#111"}>
-		 {p.product_name}
-		</Title>
-		<QuantityHolder>
-		 {/* <QuantityTitle style={{color: "#fff"}}>Quantity</QuantityTitle> */}
-		 <MdOutlineProductionQuantityLimits size={18} color={isDarkMode ? "#fff" : "#111"} />
-		 <Quantity cl={isDarkMode ? "#fff" : "#555"}>{p.quantity}</Quantity>
+	{orderHistory.map((item,index) => (
+	<Product key={`history-${index}`} bg={isDarkMode ? "#111" : "#fff"}>
+	 <Image src={item.image} alt={item.title} />
+	 <Info>
+	  <Title cl={isDarkMode ? "#fff" : "#111"}>
+	   {item.title}
+	  </Title>
+	  <Details>
+	   <Description cl={isDarkMode ? "#f5f5f5" : "#444"}>
+		{item.description.slice(0, 60)}...
+	   </Description>
+        <QuantityHolder>
+		 <IconHolder>
+		  <PiShoppingCartSimpleFill size={20} color={isDarkMode ? "#fff" : "#585858"} />	
+		 </IconHolder>
+		 <Quantity cl={isDarkMode ? "#fff" : "#555"}>
+		  {item.quantity}
+		 </Quantity>
 		</QuantityHolder>
-		<PriceHolder>
-		 <ImPriceTag size={16} color={isDarkMode ? "#fff" : "#111"} />
-		 <Price cl={isDarkMode ? "#fff" : "#555"}>{p.price}</Price>
-		</PriceHolder>
-		<RatingHolder>
-		 <IoMdStar size={22} color={isDarkMode ? "#fff" : "#111"} />
-		 <Rating cl={isDarkMode ? "#fff" : "#222"}>{p.rating}</Rating>
-		</RatingHolder>
-		 <Description cl={isDarkMode ? "#999" : "#444"}>
-		 {p.description.slice(0, 100)}...
-		</Description>
-	   </Info>
-	  </Link>
-	  </Product>
-	 ))}
+	   <PriceHolder>
+		<IconHolder>	
+		 <ImPriceTag size={16} color={isDarkMode ? "#fff" : "#585858"} />
+		</IconHolder> 
+		<Price cl={isDarkMode ? "#fff" : "#555"}>{item.price}</Price>
+	   </PriceHolder>
+	   <RatingHolder>
+		<IconHolder>
+		<IoMdStar size={22} color={isDarkMode ? "#e8e8e8" : "#4b4b4b"} />				
+		</IconHolder>
+		<Rating cl={isDarkMode ? "#e8e8e8" : "#222"}>
+		 {item.rating}
+		</Rating>
+	   </RatingHolder>
+	  </Details>
+	  <div style={{flex: 1, display: "flex", alignItems: "flex-end"}}>
+	   <TypeHolder cl={isDarkMode}>
+		<Type>{item.type}</Type>
+	   </TypeHolder>
+	  </div>
+	 </Info>
+	</Product>
+	))}
 	</Products>
    </ProductBox>
   </Main>
@@ -71,111 +83,41 @@ const Main = styled.div<{isDarkMode: boolean}>`
 `;
 
 const ProductBox = styled.div`
-	max-width: 800px;
-	height: 50px;
-	width: 100%;
-	height: max-content;
+ max-width: 1140px;
+ height: 50px;
+ width: 100%;
+ height: max-content;
 `;
 
 const Header = styled.div`
-	display: flex;
-	position: relative;
-	justify-content: space-between;
-	align-items: center;
-	padding: 7px 10px;
+ display: flex;
+ position: relative;
+ justify-content: space-between;
+ align-items: center;
+ padding: 7px 10px;
 `;
 
 const HeadTitle = styled.h2<{cl: string}>`
-	font-size: 22px;
-	font-weight: 500;
-	color: ${({cl}) => cl};
+ font-size: 22px;
+ font-weight: 500;
+ color: ${({cl}) => cl};
 `;
-
+ 
 const Products = styled.div`
-	display: grid;
-	padding: 10px;
-	gap: 10px;
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+ display: grid;
+ padding: 10px;
+ gap: 10px;
+ grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 `;
-
-const Product = styled.div<{bg: string}>`
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	border-radius: 4px;
-	box-shadow: 3px 3px 5px #00000020;
-	cursor: pointer;
-	background-color: ${({bg}) => bg};
-
-	:hover {
-	  opacity: 0.7;
-    }
-`;
-
-const Top = styled.div`
-	position: relative;
-`;
-
-const Image = styled.img`
-	height: 250px;
-	object-fit: cover;
-	border-radius: 5px;
-	width: 100%;
-`;
-
-const Info = styled.div`
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 5px;
-`;
-
-const Title = styled.h4<{cl: string}>`
-	color: ${({cl}) => cl};
-	cursor: pointer;
-`;
-
+ 
 const QuantityHolder = styled.div`
-    display: flex; 
-	align-items: center; 
-	gap: 10px;
+ display: flex; 
+ align-items: center; 
+ gap: 10px;
 `;
-
-const QuantityTitle = styled.span``;
 
 const Quantity =  styled.span<{cl: string}>`
-    color: ${({cl}) => cl};
-	font-weight: 500;
-	font-size: 12px;
-`;
-
-const Description = styled.p<{cl: string}>`
-	color: ${({cl}) => cl};
-	font-size: 16px;
-	text-decoration: none;
-`;
-
-const PriceHolder = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 10px;
-`;
-
-const Price = styled.span<{cl: string}>`
-	color: ${({cl}) => cl};
-	font-weight: 500;
-	font-size: 12px;
-`;
-
-const RatingHolder = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin: -5px 0px;
-`;
-
-const Rating = styled.span<{cl: string}>`
-	color: ${({cl}) => cl};
-	font-weight: 500;
-	font-size: 12px;
+ color: ${({cl}) => cl};
+ font-weight: 500;
+ font-size: 12px;
 `;

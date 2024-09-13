@@ -1,65 +1,27 @@
 "use client";
 
 import styled from "styled-components";
-import {MdSunny, MdNightlight} from "react-icons/md";
-import {HiOutlineBars3} from "react-icons/hi2";
-import {AiOutlineShoppingCart} from "react-icons/ai";
-import {toggleDarkMode, toggleNav} from "@/redux/slices/authSlice";
 import {useRouter} from "next/navigation";
 import {useAppDispatch, useAppSelector} from "@/lib/redux";
-import {useEffect} from "react";
-import {addProducts} from "@/redux/slices/productSlice";
-import {API} from "@/lib/API";
+import {toggleSidebar} from "@/redux/userSlice";
+import {BsGrid3X3GapFill} from "react-icons/bs";
 
 const Navbar = () => {
- const {isDarkMode} = useAppSelector(state => state.auth);
+ const {isDarkMode} = useAppSelector(state => state.user);
  const {push} = useRouter();
  const dispatch = useAppDispatch();
-
- useEffect(() => {
-  async function getProducts() {
-   const res = await API.get("/product/fetchproducts");
-   const data = await res.data;
-   dispatch(addProducts(data));
-  };
-  
-  getProducts();
- },[]);
-
- const changeDarkMode = () => {
-  if (isDarkMode) {
-   dispatch(toggleDarkMode("no"));
-   localStorage.removeItem("shopping-darkmode");
-  } else {
-   dispatch(toggleDarkMode("yes"));
-   localStorage.setItem("shopping-darkmode", "yes");
-  };
- };
 
  return (
   <Nav isDarkMode={isDarkMode}>
    <Left>
-	<HiOutlineBars3
-	 size={28}
-	 color={!isDarkMode ? "#111" : "#fff"}
+ 	<BsGrid3X3GapFill
+	 size={24}
+	 color={!isDarkMode ? "#666" : "#fff"}
 	 style={{cursor: "pointer"}}
-	 onClick={() => dispatch(toggleNav())}
+	 onClick={() => dispatch(toggleSidebar())}
 	/>
 	<Logo isDarkMode={isDarkMode} onClick={() => push("/home")}>ShopCart</Logo>
    </Left>
-   <Right>
-	<div>
-	 <AiOutlineShoppingCart
-	  size={32}
-	  cursor={"pointer"}
-	  color={!isDarkMode ? "#111" : "#fff"}
-	  onClick={() => push("/home/orders")}
-	 />
-	</div>
-	<DarkMode onClick={changeDarkMode}>
-	 {isDarkMode ? (<MdSunny size={27} color={"gold"} />) : (<MdNightlight size={27} color={"gold"} />)}
-	</DarkMode>
-   </Right>
   </Nav>
  );
 };
@@ -68,45 +30,25 @@ export default Navbar;
 
 const Nav = styled.nav<{isDarkMode: boolean}>`
  background-color: ${({isDarkMode}) => (isDarkMode ? "#111" : "#fff")};
- padding: 10px;
+ height: 56px;
  display: flex;
+ padding: 0 12px;
  align-items: center;
  justify-content: space-between;
- box-shadow: 0px 4px 8px #e5e5e5;
+ box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 `;
 
 const Logo = styled.h1<{isDarkMode: boolean}>`
- color: ${({isDarkMode}) => !isDarkMode ? "#111" : "#fff"};
+ color: ${({isDarkMode}) => !isDarkMode ? "#111" : "#f5f5f5"};
  font-weight: 500;
- font-size: 24px;
+ font-size: 22px;
  cursor: pointer;
 `;
 
 const Left = styled.div`
  display: flex;
- align-items: center;
  gap: 10px;
-`;
-
-const Right = styled.div`
- display: flex;
- align-items: center;
- gap: 10px;
- padding: 0 10px;
-
- @media screen and (min-width: 670px) {
-  gap: 20px;
-  padding: 0 20px;
- }
-`;
-
-const DarkMode = styled.div`
- padding: 5px;
- cursor: pointer;
- height: 40px;
- width: 40px;
- display: grid;
- place-items: center;
- border-radius: 100%;
- background-color: transparent;
+ width: 100%;
+ max-width: 1140px;
+ margin: auto;
 `;

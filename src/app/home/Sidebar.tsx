@@ -1,47 +1,65 @@
 "use client";
 
-import {MdAccountCircle} from "react-icons/md";
+import {MdAccountCircle, MdNightlight, MdSunny} from "react-icons/md";
 import styled from "styled-components";
 import {BiStoreAlt,BiBell} from "react-icons/bi";
-import {RiAccountCircleLine,RiCoupon2Line} from "react-icons/ri";
+import {RiAccountCircleLine} from "react-icons/ri";
 import {ImHistory} from "react-icons/im";
 import {
-	AiOutlineHeart,
-	AiOutlineShoppingCart,
-	AiOutlineLogin,
-	AiOutlineHome,
+ AiOutlineHeart,
+ AiOutlineShoppingCart,
+ AiOutlineLogin,
+ AiOutlineHome,
 } from "react-icons/ai";
 import {IoArrowBackOutline} from "react-icons/io5";
-import {logout,toggleNav,toggleShowAuth} from "@/redux/slices/authSlice";
 import {useRouter} from "next/navigation";
 import {useAppDispatch, useAppSelector} from "@/lib/redux";
+import AuthBox from "@/components/AuthBox";
+import {logout, toggleAuthModal, toggleDarkMode, toggleSidebar} from "@/redux/userSlice";
+import {useEffect, useState} from "react";
+import {API} from "@/lib/API";
 
-var size = 25;
+let size = 25;
 
-const Sidebar = (): JSX.Element => {
- const auth = useAppSelector(state => state.auth);
- const {user,isAuth,isDarkMode,isNavOpen} = auth;
+const Sidebar = () => {
+ const {showSidebar, user, showAuthModal, isDarkMode} = useAppSelector(state => state.user);
  const {push} = useRouter();
  const dispatch = useAppDispatch();
 
- const logout_user = () => {
+ const handleLogout = async () => {
+  await API.delete("/auth/logout");
   localStorage.removeItem("shopping-user");
   dispatch(logout());
+  location.reload();
  };
 
+ useEffect(() => {
+  if(isDarkMode) localStorage.setItem("shopping-darkmode", "true");
+  else localStorage.removeItem("shopping-darkmode");
+ }, [isDarkMode]);
+
  return (
-  <Nav style={{left: isNavOpen ? "0px" : "-300px"}} dm={isDarkMode}>
+  <NavContainer 
+   style={{transform: `scale(${showSidebar ? 1 : 0})`}} 
+   onClick={() => dispatch(toggleSidebar())}
+  >
+   <Nav 
+	style={{width: showSidebar ? "280px" : "0px"}} 
+	dm={isDarkMode} 
+	onClick={e => e.stopPropagation()}
+   >
+   {showAuthModal && <AuthBox />}		
    <UserInfo dm={isDarkMode}>
-	<div className='profile-holder'>
+	<div className='profile-holder'>		
 	 <MdAccountCircle size={50} color={"#fff"} />
 	 <IoArrowBackOutline
 	  size={23}
 	  color='#fff'
 	  style={{cursor: "pointer"}}
-	  onClick={() => dispatch(toggleNav())}
+	  onClick={() => dispatch(toggleSidebar())}
 	 />
 	</div>
-	<UserTitle>Hello, {isAuth ? user.name : "Guest"}</UserTitle>
+	<UserTitle>Hello, {user?.name || "Guest"}</UserTitle>
    </UserInfo>
    <NavList>
 	<ListItem dm={isDarkMode} onClick={() => push("/home")}>
@@ -73,89 +91,92 @@ const Sidebar = (): JSX.Element => {
 	 <BiBell size={size} color={isDarkMode ? "#fff" : "#111"} />
 	 <span>Notifications</span>
 	</ListItem>
-	<ListItem dm={isDarkMode}>
-	 <RiCoupon2Line size={size} color={isDarkMode ? "#fff" : "#111"} />
-	 <span>Coupon</span>
+	<ListItem dm={isDarkMode} onClick={() => dispatch(toggleDarkMode(!isDarkMode))}>
+	  {!isDarkMode ? (<MdSunny size={24} color={"gold"} />) : (<MdNightlight size={24} color={"gold"} />)}
+	 <span>{!isDarkMode ? "Light" : "Dark"} Mode</span>
 	</ListItem>
-	{isAuth ? (
-	<ListItem dm={isDarkMode} onClick={logout_user}>
+	{user?.email ? (
+	<ListItem dm={isDarkMode} onClick={handleLogout}>
 	 <AiOutlineLogin size={size} color={isDarkMode ? "#fff" : "#111"} />
 	 <span>Logout</span>
 	</ListItem>
 	) : (
-	<ListItem dm={isDarkMode} onClick={() => dispatch(toggleShowAuth(true))}>
+	<ListItem dm={isDarkMode} onClick={() => dispatch(toggleAuthModal())}>
 	 <AiOutlineLogin size={size} color={isDarkMode ? "#fff" : "#111"} />
 	 <span>Login</span>
 	</ListItem>
 	)}
    </NavList>
   </Nav>
+  </NavContainer>
  );
 };
 
 export default Sidebar;
 
+const NavContainer = styled.aside`
+ background-color: rgba(0,0,0,0.5);
+ position: fixed;
+ top: 0;
+ height: 100vh;
+ width: 100vw;
+ z-index: 9999999999;
+`;
+
 const Nav = styled.nav<{dm: boolean}>`
-	width: 270px;
-	background-color: ${({dm}) => (dm ? "#151515" : "#fff")};
-	position: fixed;
-	top: 0;
-	box-shadow: 0px 0px 2px #f6f5f5;
-	left: -300px;
-	height: 100vh;
-	z-index: 9999999999;
-	transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+ height: 100%;
+ background-color: ${({dm}) => (dm ? "#151515" : "#fff")};
+ transition: all 0.5s ease-in;
 `;
 
 const NavList = styled.section`
-	display: flex;
-	flex-direction: column;
+ display: flex;
+ flex-direction: column;
 `;
 
 const UserInfo = styled.div<{dm: boolean}>`
-	display: flex;
-	padding: 20px 10px 10px 10px;
-	background-color: ${({dm}) => (dm ? "#111" : "dodgerblue")};
-	gap: 17px;
-	flex-direction: column;
+ display: flex;
+ padding: 20px 10px 10px 10px;
+ background-color: ${({dm}) => (dm ? "#111" : "dodgerblue")};
+ gap: 17px;
+ flex-direction: column;
 
-	.profile-holder {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-	}
+ .profile-holder {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+ }
 `;
 
 const UserTitle = styled.p`
-	font-weight: 400;
-	color: #fff;
-	font-size: 20px;
+ font-weight: 400;
+ color: #fff;
+ font-size: 20px;
 `;
 
 const ListItem = styled.div<{dm: boolean}>`
-	display: flex;
-	align-items: center;
-	padding: 10px;
-	gap: 13px;
-	margin: 3px 0;
-	transition: all 0.4s ease-in-out;
-	cursor: pointer;
+ display: flex;
+ align-items: center;
+ padding: 10px;
+ gap: 13px;
+ margin: 3px 0;
+ transition: all 0.4s ease-in-out;
+ cursor: pointer;
 
-	:hover {
-		background-color: ${({dm}) =>
-		!dm ? "rgba(0, 0, 0, 0.04111111)" : "rgba(255, 255, 255, 0.0811111111)"};
-	}
+ &:hover {
+  background-color: ${({dm}) => !dm ? "rgba(0, 0, 0, 0.041)" : "rgba(255, 255, 255, 0.081)"};
+ }
 
-	span {
-		font-weight: 400;
-		font-size: 15px;
-		color: ${({dm}) => (dm ? "#fff" : "#111")};
-	}
+ span {
+  font-weight: 400;
+  font-size: 15px;
+  color: ${({dm}) => (dm ? "#fff" : "#111")};
+ }
 
-	.new {
-		background-color: red;
-		padding: 2px 4px;
-		font-size: 12px;
-		color: #fff;
-	}
+ .new {
+  background-color: red;
+  padding: 2px 4px;
+  font-size: 12px;
+  color: #fff;
+ }
 `;

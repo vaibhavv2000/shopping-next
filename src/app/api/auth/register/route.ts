@@ -1,47 +1,51 @@
 import pg from "@/lib/pg";
-import {NextRequest, NextResponse} from "next/server";
-import jwt from "jsonwebtoken";
+import {type NextRequest, NextResponse} from "next/server";
 import bcrypt from "bcrypt";
-
-let jwt_key = "1nx8wg7wtc9picwkmn82ghbncw";
+import {validateEmail} from "@/lib/emailValidator";
+import {cookies} from "next/headers";
+import cookieOptions from "@/utils/cookieOptions";
+import JWT from "@/utils/JWT";
 
 export async function POST(req: NextRequest) {
- const {email,name,password} = await req.json();
+ let {email,name,password} = await req.json();
 
- if(!name || !password || !email) {
+ name = name.trim();
+ email = email.trim();
+ password = password.trim();
+
+ if(!name || !password || !email)
   return NextResponse.json({message: "All fields are required"},{status: 400});
- };
+
+ if(name.length < 3)
+  return NextResponse.json({message: "Name should have atleast 3 characters"},{status: 400});
+
+ if(!validateEmail(email))
+  return NextResponse.json({message: "Email is Invalid"},{status: 400});  
+
+ if(password.length < 8)
+  return NextResponse.json({message: "Password must have atleast 8 characters"},{status: 400});
+
+ if(password.includes(" "))
+  return NextResponse.json({message: "Password must not include spaces"},{status: 400});  
 
  try {
-  const get_user = await pg.query(
-   `SELECT email FROM users WHERE email = $1`,
-   [email]
-  );
+  const {rows: [isUser]} = await pg.query(`SELECT email FROM users WHERE email = $1`, [email]);
 
-  if(get_user.rows[0]) {
-   return NextResponse.json({message: "User already exists"},{status:400});
-  };
+  if(isUser) return NextResponse.json({message: "Email already exists"},{status:400});
 
   const salt: string = await bcrypt.genSalt(10);
   const hash: string = await bcrypt.hash(password,salt);
 
-  const new_user = await pg.query(
-   `INSERT INTO users (name, email, password) VALUES
-   ($1, $2, $3) RETURNING id`,
+  const {rows: [{id}]} = await pg.query(
+   `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id`,
    [name,email,hash]
   );
 
-  const user = new_user.rows[0];
+  const token = JWT.sign({id, name, email});
 
-  const token = jwt.sign(
-   {id: user.id,email: email},
-   process.env.JWT_KEY || jwt_key as string,
-   {expiresIn: "10d",}
-  );
+  cookies().set("shopping-user", token, cookieOptions);
 
-  const user_data = {email,name,id: user.id};
-
-  return NextResponse.json({user: user_data,token},{status: 201});
+  return NextResponse.json({user: {id, name, email},token},{status: 201});
  } catch(error) {
   return NextResponse.json(error,{status:500});
  };

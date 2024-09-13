@@ -1,41 +1,44 @@
 import pg from "@/lib/pg";
 import {NextRequest, NextResponse} from "next/server";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-
-let jwt_key = "1nx8wg7wtc9picwkmn82ghbncw";
+import {validateEmail} from "@/lib/emailValidator";
+import {cookies} from "next/headers";
+import cookieOptions from "@/utils/cookieOptions";
+import JWT from "@/utils/JWT";
 
 export async function POST(req: NextRequest) {
- const {email, password} = await req.json();
+ let {email, password} = await req.json();
 
- if(!password || !email) {
-  return NextResponse.json({message: "All fields are required"},{status:400});
- };
-  
+ email = email.trim();
+ password = password.trim();
+
+ if(!password || !email)
+  return NextResponse.json({message: "All fields are required"}, {status:400});
+
+ if(!validateEmail(email))
+  return NextResponse.json({message: "Email is Invalid"}, {status: 400});
+
+ if(password.includes(" "))
+  return NextResponse.json({message: "Password should not include space"}, {status: 400});
+
+ if(password.length < 8) 
+  return NextResponse.json({message: "Password must have 8 characters"}, {status: 400});
+
+ let query = `SELECT name, email, id, password FROM users WHERE email = $1`;
+
  try {
-  const user = await pg.query(
-  `SELECT name, email, id, password FROM users WHERE email = $1`,
-   [email]
-  );
-  
-  if(!user.rows[0]) return NextResponse.json({message: "No user found"},{status: 404});
-  
-  const pwd: boolean = await bcrypt.compare(password,user.rows[0].password);
-  
-  if(!pwd) return NextResponse.json({message: "Wrong PWD"},{status:400});
-  
-  let u = user.rows[0];
-  
-  const token = jwt.sign(
-   {id: u.id,email: email},
-   process.env.JWT_KEY || jwt_key as string,
-   { expiresIn: "30d",}
-  );
-  
-  const user_data = {email,name: u.name,id: u.id};
-  
-  return NextResponse.json({user: user_data,token},{status:200});
+  const {rows: [user]} = await pg.query(query, [email]);
+  if(!user) return NextResponse.json({message: `No user found found with ${email}`},{status: 404});
+
+  const isCorrect: boolean = await bcrypt.compare(password,user.password);
+  if(!isCorrect) return NextResponse.json({message: "Email or Password is wrong"},{status:400});
+
+  let data = {id: user.id, email, name: user.name};
+  const token = JWT.sign(data);
+  cookies().set("shopping-user", token, cookieOptions);
+
+  return NextResponse.json({user: data,token},{status:200});
  } catch(error) {
   return NextResponse.json(error,{status:500});
- }
-}
+ };
+};

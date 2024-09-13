@@ -1,12 +1,12 @@
 'use client';
 
-import {AppStore,makeStore} from '@/redux/store';
-import {ReactNode,useEffect,useRef} from 'react';
+import {type ReactNode,useEffect,useRef} from 'react';
 import {Provider as ReduxProvider} from 'react-redux';
 import {useAppDispatch, useAppSelector} from './redux';
-import {login, toggleDarkMode} from '@/redux/slices/authSlice';
 import {API} from './API';
-import {addDetails, setDataFetched} from '@/redux/slices/userSlice';
+import {AppStore, makeStore} from './store';
+import {login, toggleDarkMode} from '@/redux/userSlice';
+import {addDetails} from '@/redux/productSlice';
 
 interface props {
  children: ReactNode;
@@ -27,34 +27,41 @@ function Provider({children}:props) {
 
 const Children = ({children}:props) => {
  const dispatch = useAppDispatch();
- const {isDataFetched} = useAppSelector(state => state.user);
- const {isAuth, user} = useAppSelector(state => state.auth);
+ const {user} = useAppSelector(state => state.user);
 
  useEffect(() => {
-  const user = localStorage.getItem("shopping-user");
-  const darkmode = localStorage.getItem("shopping-darkmode");
+  const checkAuth = async () => {
+   const darkmode = localStorage.getItem("shopping-darkmode");
+   if(darkmode) dispatch(toggleDarkMode(true));
 
-  if(user) dispatch(login(JSON.parse(user)));
-  if(darkmode) dispatch(toggleDarkMode("yes"));
+   const auth = localStorage.getItem("shopping-auth");
+   if(!auth) return;
+
+   try {
+    const res = await API.get("/auth/checkauth");
+    dispatch(login(res.data));
+   } catch (error) {
+    localStorage.removeItem("shopping-auth");
+   } 
+  };
+
+  checkAuth();
  }, []);
 
  useEffect(() => {
   async function fetchUserData() {
-   const res = await API.get(`/product/getuserdata?id=${user.id}`);
-   const data = await res.data;
+   if(!user.email) return;
 
-   const order_history = data.historylist;
-   const wishlist = data.wishlist;
-   const my_orders = data.orderlist;
-  
-   dispatch(addDetails({order_history, wishlist, my_orders}));
+   try {
+    const res = await API.get(`/product/getuserdata`);
+    dispatch(addDetails(res.data));
+   } catch (error) {
+    console.log("ERORRR", error)
+   }
   };
   
-  if (isAuth && !isDataFetched) {
-   fetchUserData();
-   dispatch(setDataFetched());
-  };
- }, [isAuth]);
+  fetchUserData();
+ }, [user.email]);
 
  return <>{children}</>;
 };
